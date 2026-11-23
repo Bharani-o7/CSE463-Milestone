@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Headphones Checkout Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a shipped retail product — calm, exact, nothing decorative competing with the task
+   IDEA: a store receipt that builds as you shop — your selections travel with you on every screen
+   PICTURE: the product itself, drawn in the colour you picked, large on the product page
+   COLOUR and TYPE: white ground, graphite #16181d chrome, one sharp accent #e8452c for actions; green/amber/red only for stock status; Figtree
+   LAYOUT: two columns (content + a sticky "Your selection" receipt), stacks under 760px */
+:root{color-scheme:light dark;--bg:light-dark(#f6f6f4,#121316);--card:light-dark(#fff,#1c1e23);--ink:light-dark(#16181d,#eceef2);--mut:light-dark(#5d626c,#a3a8b2);--line:light-dark(#e2e2de,#2e3138);--acc:#e8452c;--acc2:light-dark(#c7341d,#ff6a4f);--ok:light-dark(#1d7a46,#4cc785);--warn:light-dark(#9a5b00,#f0b04a);--bad:light-dark(#b42318,#ff7b6e);--soft:light-dark(#f0efeb,#24272d);--chrome:#16181d}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;overflow-x:clip}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.proto{background:#fff3cf;color:#3d2e00;font-size:13px;padding:6px max(4vw,12px);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.proto b{font-weight:700}.proto .sp{flex:1}
+.proto button{background:#3d2e00;color:#fff;border:0;border-radius:6px;padding:6px 12px;min-height:32px}
+.proto label{display:flex;gap:6px;align-items:center}
+.top{background:var(--chrome);color:#fff;padding:12px max(4vw,12px);display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:800;font-size:20px;letter-spacing:-.02em}.brand i{color:var(--acc);font-style:normal}
+.search{flex:1 1 260px;display:flex;background:#fff;border-radius:8px;overflow:hidden}
+.search input{flex:1;border:0;padding:10px 12px;color:#16181d;font-size:16px}
+.search button{border:0;background:var(--acc);color:#fff;padding:0 16px;font-weight:600}
+.loc{background:none;border:1px solid #ffffff44;color:#fff;border-radius:8px;padding:6px 10px;text-align:left;line-height:1.2;min-height:44px}
+.loc small{display:block;color:#c9ccd3;font-size:12px}
+.cartbtn{background:none;border:1px solid #ffffff44;color:#fff;border-radius:8px;padding:8px 12px;min-height:44px;font-weight:600}
+.cartbtn span{background:var(--acc);border-radius:99px;padding:0 7px;margin-left:6px;font-size:13px}
+main{max-width:1180px;margin:0 auto;padding:20px max(4vw,12px) 64px}
+.crumbs{font-size:14px;color:var(--mut);margin-bottom:12px}
+.crumbs button{background:none;border:0;padding:0;color:var(--acc2);text-decoration:underline}
+h1{font-size:clamp(24px,3.2vw,34px);line-height:1.1;margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:20px;margin:0 0 12px}
+h3{font-size:16px;margin:0 0 8px}
+.mut{color:var(--mut)}.sm{font-size:14px}.xs{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.receipt{position:sticky;top:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:10px;border:0;background:var(--acc);color:#fff;font-weight:700;font-size:16px}
+.btn:hover{background:var(--acc2)}
+.btn[disabled]{background:var(--line);color:var(--mut);cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.block{width:100%}
+.link{background:none;border:0;padding:4px 0;color:var(--acc2);font-weight:600;text-decoration:underline;min-height:32px}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.res{display:flex;flex-direction:column;gap:8px;text-align:left;cursor:pointer}
+.res:hover{border-color:var(--ink)}
+.pic{background:var(--soft);border-radius:10px;display:grid;place-items:center;aspect-ratio:4/3}
+.pic svg{width:72%;height:auto}
+.price{font-size:26px;font-weight:800}.was{color:var(--mut);text-decoration:line-through;font-size:14px;margin-left:6px}
+.save{color:var(--ok);font-weight:700;font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:20px;height:20px;border-radius:50%;border:1px solid #0003;display:inline-block;position:relative}
+.dot.out::after{content:"";position:absolute;left:-2px;right:-2px;top:50%;height:2px;background:var(--bad);transform:rotate(-45deg)}
+.pdp{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);gap:24px}.pdp h1{font-size:clamp(22px,2.2vw,26px)}
+.big{aspect-ratio:1/1}
+fieldset{border:0;padding:0;margin:18px 0 0}
+legend{font-weight:700;margin-bottom:8px}
+.sw{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.opt{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:10px;background:var(--card);text-align:left;min-height:56px}
+.opt[aria-pressed=true],.opt[aria-checked=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opt .dot{flex:none;width:28px;height:28px}
+.opt b{display:block;font-size:15px}
+.st{display:block;font-size:13px;font-weight:600;line-height:1.3}.st.ok{color:var(--ok)}.st.warn{color:var(--warn)}.st.bad{color:var(--bad)}
+.alert{border-radius:12px;padding:16px;margin-top:12px;border:1.5px solid var(--bad);background:light-dark(#fff4f2,#2a1714)}
+.alert.okb{border-color:var(--ok);background:light-dark(#effaf3,#13241a)}
+.alert .acts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.alert .acts button{justify-content:flex-start;text-align:left}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px}
+.kv dt{color:var(--mut)}.kv dd{margin:0;font-weight:600}
+.sum{width:100%;border-collapse:collapse;font-size:15px}
+.sum td{padding:6px 0}.sum td:last-child{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sum tr.tot td{border-top:1px solid var(--line);padding-top:12px;font-size:20px;font-weight:800}
+.note{font-size:13px;border-radius:8px;padding:8px 10px;background:light-dark(#fff8e6,#2a2312);color:var(--warn);margin-top:8px}
+.line{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:16px;align-items:start}
+.line .pic,.sec .pic{aspect-ratio:1/1;align-self:start}
+.qty{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.qty button{width:40px;height:40px;border:0;background:var(--soft);font-size:18px}
+.qty span{width:40px;display:grid;place-items:center;font-weight:700}
+.editor{margin-top:14px;padding:16px;border-radius:12px;background:var(--soft)}
+.form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px 14px}
+.f{display:flex;flex-direction:column;gap:4px;grid-column:span 6}
+.f.h{grid-column:span 3}.f.t{grid-column:span 2}
+.f label{font-weight:600;font-size:14px}
+.f input,.f select{min-height:46px;border:1.5px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card);font-size:16px}
+.f.err input,.f.err select{border-color:var(--bad)}
+.f .e{color:var(--bad);font-size:13px;font-weight:600;display:none}.f.err .e{display:block}
+.steps{display:flex;gap:6px;flex-wrap:wrap;font-size:13px;margin:4px 0 16px}
+.steps span{padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--mut);font-weight:600}
+.steps span.on{background:var(--ink);color:var(--bg)}
+.steps span.done{color:var(--ok)}
+.sec{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding:14px 0}
+.sec:last-child{border:0}
+.modal{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:16px;z-index:9}
+.modal .card{width:min(520px,100%);box-shadow:0 20px 60px #0005}
+.check{width:44px;height:44px;border-radius:50%;background:var(--ok);display:grid;place-items:center;color:#fff;font-size:24px;font-weight:800;flex:none}
+.hero-ok{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--chrome);color:#fff;padding:12px 18px;border-radius:10px;font-size:15px;z-index:10;max-width:92vw}
+@media(prefers-reduced-motion:no-preference){.modal .card,.alert{animation:pop .18s ease-out}@keyframes pop{from{transform:translateY(8px);opacity:0}}}
+@media(max-width:760px){.grid,.pdp{grid-template-columns:minmax(0,1fr)}.receipt{position:static}.f.h,.f.t{grid-column:span 6}.line{grid-template-columns:72px minmax(0,1fr)}.line>div:last-child{grid-column:2}}
+</style>
+</head>
+<body>
+<div class="proto" role="note"><b>CSE 463 prototype</b><span>Redesign concept of an electronics store checkout, based on bestbuy.com. Not affiliated with Best Buy. Simulated: no real purchase, inventory or payment.</span><span class="sp"></span><label><input type="checkbox" id="showS" checked> Show state IDs</label><span id="sid" aria-live="polite"></span><button id="reset" type="button">Reset prototype</button></div>
+<header class="top">
+  <div class="brand">volt<i>.</i>store</div>
+  <form class="search" id="sform" role="search"><input id="q" aria-label="Search products" value="noise cancelling headphones"><button>Search</button></form>
+  <button class="loc" id="locbtn" type="button"><small>Delivering to</small><span id="loctxt"></span></button>
+  <button class="cartbtn" id="cartbtn" type="button">Cart<span id="ccount">0</span></button>
+</header>
+<main id="app"></main>
+<div id="layer"></div>
+<script>
+{
+const PRODUCTS=[
+ {id:'xm5',name:'Sony WH-1000XM5 Wireless Noise Cancelling Over-the-Ear Headphones',short:'Sony WH-1000XM5',model:'WH1000XM5',price:169.99,was:398,rating:4.6,reviews:'5,757',
+  colors:[{n:'Black',c:'#26272b',ship:'ok',pick:'ok'},{n:'Midnight Blue',c:'#26344f',ship:'ok',pick:'ok'},{n:'Silver',c:'#d9d6cf',ship:'low',pick:'ok'},{n:'Smoky Pink',c:'#cdb3ad',ship:'out',pick:'ok'}]},
+ {id:'xm4',name:'Sony WH-1000XM4C Wireless Noise Cancelling Headphones (2nd Gen)',short:'Sony WH-1000XM4C',model:'WH1000XM4C',price:199.99,was:298,rating:5.0,reviews:'1',
+  colors:[{n:'Platinum Silver',c:'#cfd0d2',ship:'ok',pick:'ok'},{n:'Black',c:'#26272b',ship:'ok',pick:'out'}]},
+ {id:'xm6',name:'Sony WH-1000XM6 Wireless Noise Cancelling Headphones',short:'Sony WH-1000XM6',model:'WH1000XM6',price:348,was:458,rating:4.7,reviews:'1,457',
+  colors:[{n:'Black',c:'#26272b',ship:'ok',pick:'ok'},{n:'Midnight Blue',c:'#26344f',ship:'ok',pick:'low'},{n:'Platinum Silver',c:'#cfd0d2',ship:'ok',pick:'ok'},{n:'Sand Pink',c:'#d7b9ae',ship:'ok',pick:'ok'}]}];
+const ZIPS={'85281':{city:'Tempe, AZ',rate:.081},'85251':{city:'Scottsdale, AZ',rate:.08},'85004':{city:'Phoenix, AZ',rate:.086}};
+const STORE='Scottsdale Fashion Square store';
+const PROT=49.99;
+const fresh=()=>({view:'search',pid:'xm5',color:'Black',ful:'ship',prot:false,cart:[],zip:'85281',zipSrc:'estimated from your network',editing:false,fromReview:false,form:{email:'',phone:'',first:'',last:'',addr:'',city:'',state:'AZ',zip:'',card:'',exp:'',cvc:''},errs:{},formDone:false,order:null,taxNote:'',locOpen:false,ret:null});
+let S=fresh();
+const $=s=>document.querySelector(s);
+const money=n=>'$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const P=id=>PRODUCTS.find(p=>p.id===id);
+const col=(p,n)=>p.colors.find(c=>c.n===n);
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const phone=c=>`<svg viewBox="0 0 200 180" aria-hidden="true"><path d="M40 112 C40 40 160 40 160 112" fill="none" stroke="${c}" stroke-width="13" stroke-linecap="round"/><path d="M40 112 C40 40 160 40 160 112" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round" transform="translate(0,-5)"/><rect x="20" y="98" width="44" height="68" rx="20" fill="${c}"/><rect x="136" y="98" width="44" height="68" rx="20" fill="${c}"/><rect x="26" y="104" width="12" height="56" rx="6" fill="#fff" fill-opacity=".18"/><rect x="142" y="104" width="12" height="56" rx="6" fill="#fff" fill-opacity=".18"/><ellipse cx="100" cy="172" rx="78" ry="5" fill="#000" fill-opacity=".12"/></svg>`;
+const stTxt=(c,ful,zip)=>{const v=ful==='ship'?c.ship:c.pick;
+ if(ful==='ship')return v==='out'?['bad','Sold out for shipping']:v==='low'?['warn','Only 3 left · ships tomorrow']:['ok','Ships tomorrow to '+zip];
+ return v==='out'?['bad','Not available at '+STORE.replace(' store','')]:v==='low'?['warn','Only 1 left · pickup today']:['ok','Pickup today at '+STORE.replace(' store','')];};
+const avail=(c,ful)=>(ful==='ship'?c.ship:c.pick)!=='out';
+const SNAME={search:'S1 · Search results',pdp:'S2 · Product page',pdpOut:'S3 · Option unavailable (recovery)',added:'S4 · Added-to-cart confirmation',cart:'S5 · Cart',checkout:'S6 · Checkout details',review:'S7 · Review order',done:'S8 · Order confirmation'};
+function sid(){let k=S.view;if(k==='pdp'&&!avail(col(P(S.pid),S.color),S.ful))k='pdpOut';if(S.layer==='added')k='added';let t=SNAME[k];if(k==='cart'&&S.editing!==false)t+=' (editing options)';if(k==='checkout'&&Object.keys(S.errs).length)t+=' (validation errors)';return t}
+const totals=()=>{let sub=0,pr=0;S.cart.forEach(l=>{sub+=P(l.pid).price*l.qty;if(l.prot)pr+=PROT*l.qty});const z=ZIPS[S.zip]||{rate:.08};const tax=Math.round((sub+pr)*z.rate*100)/100;return{sub,pr,tax,total:sub+pr+tax,rate:z.rate}};
+function go(v,extra){Object.assign(S,{view:v},extra||{});S.layer=null;render();window.scrollTo(0,0)}
+function toast(m){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),3200)}
+function receipt(title){const p=P(S.pid),c=col(p,S.color),[k,t]=stTxt(c,S.ful,S.zip);
+ return `<aside class="card receipt" aria-label="Your selection"><h3>${title||'Your selection'}</h3><dl class="kv"><dt>Product</dt><dd>${esc(p.short)}</dd><dt>Color</dt><dd>${esc(S.color)}</dd><dt>Get it by</dt><dd>${S.ful==='ship'?'Shipping to '+S.zip:'Store pickup'}</dd><dt>Protection</dt><dd>${S.prot?'2-year plan '+money(PROT):'None'}</dd><dt>Price</dt><dd>${money(p.price+(S.prot?PROT:0))}</dd></dl><p class="st ${k}" style="margin:10px 0 0">${t}</p></aside>`}
+function vSearch(){return `<p class="crumbs">Results for “${esc($('#q').value||'headphones')}” · 3 items · availability shown for shipping to <b>${S.zip}</b></p><h1>Noise cancelling headphones</h1><p class="mut" style="margin:0 0 18px">Color dots with a red line are sold out for shipping.</p>
+<div class="results">${PRODUCTS.map(p=>`<button class="card res" data-open="${p.id}"><div class="pic">${phone(p.colors[0].c)}</div><b>${esc(p.name)}</b><span class="sm mut">★ ${p.rating} (${p.reviews} reviews)</span><span><span class="price">${money(p.price)}</span><span class="was">${money(p.was)}</span></span><span class="chips" aria-label="Colors">${p.colors.map(c=>`<span class="dot ${c.ship==='out'?'out':''}" style="background:${c.c}" title="${c.n}${c.ship==='out'?' — sold out for shipping':''}"></span>`).join('')}</span><span class="xs mut">${p.colors.map(c=>c.n+(c.ship==='out'?' (sold out online)':'')).join(' · ')}</span></button>`).join('')}</div>`}
+function vPdp(){const p=P(S.pid),c=col(p,S.color),ok=avail(c,S.ful);const alt=p.colors.filter(x=>x.n!==S.color&&avail(x,'ship'));
+ return `<p class="crumbs"><button data-go="search">← Back to results</button></p><div class="grid"><div class="card"><div class="pdp"><div class="pic big">${phone(c.c)}</div><div>
+<h1>${esc(p.name)}</h1><p class="sm mut" style="margin:0 0 10px">Model ${p.model} · ★ ${p.rating} (${p.reviews})</p><div><span class="price">${money(p.price)}</span><span class="was">${money(p.was)}</span></div><div class="save">You save ${money(p.was-p.price)}</div>
+<fieldset><legend>Color: ${esc(S.color)}</legend><div class="sw" role="group">${p.colors.map(x=>{const[k,t]=stTxt(x,S.ful,S.zip);return `<button type="button" class="opt" aria-pressed="${x.n===S.color}" data-color="${esc(x.n)}"><span class="dot ${avail(x,S.ful)?'':'out'}" style="background:${x.c}"></span><span><b>${esc(x.n)}</b><span class="st ${k}">${t.replace(' to '+S.zip,'').replace(' at '+STORE.replace(' store',''),'')}</span></span></button>`}).join('')}</div>
+${ok?'':`<div class="alert" role="alert"><b>${esc(S.color)} is ${S.ful==='ship'?'sold out for shipping':'not available for pickup'}.</b><div class="sm">Nothing else changed: ${S.ful==='ship'?'shipping to '+S.zip:'pickup'}${S.prot?', protection plan':''} and price are kept. Choose one way forward:</div><div class="acts">${alt.map(a=>`<button class="btn ghost" data-swap="${esc(a.n)}"><span class="dot" style="background:${a.c}"></span> Switch to ${esc(a.n)} — ${stTxt(a,'ship',S.zip)[1].toLowerCase()}</button>`).join('')}${S.ful==='ship'&&c.pick!=='out'?`<button class="btn ghost" data-ful="pick">Keep ${esc(S.color)} — pick up today at ${STORE}</button>`:''}<button class="link" data-notify>Email me when ${esc(S.color)} ships again</button></div></div>`}
+</fieldset>
+<fieldset><legend>How you’ll get it</legend><div class="sw" role="radiogroup">
+<button type="button" role="radio" class="opt" aria-checked="${S.ful==='ship'}" data-ful="ship"><span><b>Ship to ${S.zip}</b><span class="st ${avail(c,'ship')?'ok':'bad'}">${avail(c,'ship')?'Free · arrives tomorrow':'Unavailable in this color'}</span></span></button>
+<button type="button" role="radio" class="opt" aria-checked="${S.ful==='pick'}" data-ful="pick"><span><b>Store pickup</b><span class="st ${avail(c,'pick')?'ok':'bad'}">${avail(c,'pick')?'Free · today, Scottsdale':'Unavailable in this color'}</span></span></button></div>
+<p class="xs mut" style="margin:6px 0 0">Shipping ZIP ${S.zip} (${S.zipSrc}). <button class="link xs" data-loc>Change ZIP</button></p></fieldset>
+<fieldset><legend>Optional protection</legend><label class="opt" style="cursor:pointer"><input type="checkbox" id="prot" ${S.prot?'checked':''} style="width:20px;height:20px"><span><b>2-year accidental protection · ${money(PROT)}</b><span class="xs mut">Not required. You can add or remove it in your cart.</span></span></label></fieldset>
+<div style="margin-top:20px"><button class="btn block" id="add" ${ok?'':'disabled aria-describedby="why"'}>${ok?'Add to cart':'Add to cart'}</button>${ok?'':'<p id="why" class="xs" style="color:var(--bad);margin:6px 0 0">Choose an available color or pickup above to continue.</p>'}</div>
+</div></div></div>${receipt('Adding to cart')}</div>`}
+function vCart(){const t=totals();if(!S.cart.length)return `<h1>Your cart</h1><div class="card"><p>Your cart is empty.</p><button class="btn" data-go="search">Find headphones</button></div>`;
+ return `<p class="crumbs"><button data-go="search">← Keep shopping</button></p><h1>Your cart</h1><p class="mut" style="margin:0 0 16px">Check your color and delivery before checkout. You can change them here.</p><div class="grid"><div class="card">${S.cart.map((l,i)=>{const p=P(l.pid),c=col(p,l.color),[k,tx]=stTxt(c,l.ful,S.zip);return `<div class="line"><div class="pic">${phone(c.c)}</div><div><b>${esc(p.name)}</b><dl class="kv" style="margin-top:8px"><dt>Color</dt><dd>${esc(l.color)}</dd><dt>Delivery</dt><dd>${l.ful==='ship'?'Ship to '+S.zip+' · free':'Pickup · '+STORE}</dd><dt>Protection</dt><dd>${l.prot?'2-year plan '+money(PROT):'None'}</dd></dl><p class="st ${k}" style="margin:6px 0">${tx}</p>
+<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="qty"><button aria-label="Decrease quantity" data-q="${i},-1">−</button><span>${l.qty}</span><button aria-label="Increase quantity" data-q="${i},1">+</button></span><button class="link" data-edit="${i}">${S.editing===i?'Close options':'Change color, delivery or protection'}</button><button class="link" data-rm="${i}">Remove</button></div>
+${S.editing===i?`<div class="editor"><h3>Change options for this item</h3><div class="sw">${p.colors.map(x=>{const[k2,t2]=stTxt(x,l.ful,S.zip);return `<button class="opt" aria-pressed="${x.n===l.color}" data-ecolor="${i}|${esc(x.n)}" ${avail(x,l.ful)?'':'aria-disabled="true"'}><span class="dot ${avail(x,l.ful)?'':'out'}" style="background:${x.c}"></span><span><b>${esc(x.n)}</b><span class="st ${k2}">${t2.replace(' to '+S.zip,'')}</span></span></button>`}).join('')}</div>
+<div class="sw" style="margin-top:8px"><button class="opt" aria-pressed="${l.ful==='ship'}" data-eful="${i}|ship"><b>Ship to ${S.zip}</b></button><button class="opt" aria-pressed="${l.ful==='pick'}" data-eful="${i}|pick"><b>Store pickup</b></button></div>
+<label style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" data-eprot="${i}" ${l.prot?'checked':''} style="width:20px;height:20px"> 2-year protection (${money(PROT)})</label>
+<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-done>${S.fromReview?'Save and return to review':'Done'}</button></div></div>`:''}</div><div style="text-align:right"><b style="font-size:20px">${money(p.price*l.qty)}</b>${l.prot?`<div class="xs mut">+ ${money(PROT*l.qty)} protection</div>`:''}</div></div>`}).join('<hr style="border:0;border-top:1px solid var(--line);margin:18px 0">')}</div>
+${summary(t,'<button class="btn block" data-go="checkout" '+(S.cart.every(l=>avail(col(P(l.pid),l.color),l.ful))?'':'disabled')+'>Check out</button>')}</div>`}
+function summary(t,cta){return `<aside class="card receipt"><h3>Order summary</h3><table class="sum"><tr><td>Items (${S.cart.reduce((a,l)=>a+l.qty,0)})</td><td>${money(t.sub)}</td></tr>${t.pr?`<tr><td>Protection</td><td>${money(t.pr)}</td></tr>`:''}<tr><td>Shipping</td><td>Free</td></tr><tr><td>Est. tax · ZIP ${S.zip} (${(t.rate*100).toFixed(1)}%)</td><td>${money(t.tax)}</td></tr><tr class="tot"><td>Total</td><td>${money(t.total)}</td></tr></table>${S.taxNote?`<p class="note" role="status">${S.taxNote}</p>`:''}<p class="xs mut">Prices already include your ${money(S.cart.reduce((a,l)=>a+(P(l.pid).was-P(l.pid).price)*l.qty,0))} sale savings.</p><div style="margin-top:12px">${cta}</div></aside>`}
+const FIELDS=[['email','Email','f','email','alex.rivera@example.com'],['phone','Phone (10 digits)','f h','tel','480-555-0142'],['first','First name','f h','text',''],['last','Last name','f h','text',''],['addr','Street address','f','text',''],['city','City','f h','text',''],['state','State','f t','sel',''],['zip','ZIP code','f t','text',''],['card','Card number','f','text','4242 4242 4242 4242'],['exp','Expiration (MM/YY)','f h','text','12/29'],['cvc','Security code','f h','text','123']];
+const MSG={email:'Enter an email like name@example.com.',phone:'Enter a 10-digit phone number.',first:'Enter a first name.',last:'Enter a last name.',addr:'Enter a street address.',city:'Enter a city.',state:'Choose a state.',zip:'Enter a 5-digit ZIP code.',card:'Enter a 16-digit card number.',exp:'Enter a future date as MM/YY.',cvc:'Enter the 3-digit code.'};
+function validate(f){const e={};if(!/^\S+@\S+\.\S{2,}$/.test(f.email))e.email=1;if(f.phone.replace(/\D/g,'').length!==10)e.phone=1;['first','last','addr','city'].forEach(k=>{if(!f[k].trim())e[k]=1});if(!/^\d{5}$/.test(f.zip))e.zip=1;if(f.card.replace(/\D/g,'').length!==16)e.card=1;const m=f.exp.match(/^(\d{2})\/(\d{2})$/);if(!m||+m[1]<1||+m[1]>12||(2000+ +m[2])*12+ +m[1]<2026*12+11)e.exp=1;if(!/^\d{3}$/.test(f.cvc))e.cvc=1;return e}
+function vCheckout(){const t=totals(),n=Object.keys(S.errs).length;
+ return `<p class="crumbs"><button data-go="cart">← Back to cart</button></p><h1>Checkout</h1><div class="steps"><span class="done">✓ Cart</span><span class="on">Details</span><span>Review</span><span>Done</span></div><div class="grid"><form class="card" id="cf" novalidate>${n?`<div class="alert" role="alert" tabindex="-1" id="esum"><b>${n} field${n>1?'s need':' needs'} attention.</b> Everything else you typed is kept.</div>`:''}
+<h2 style="margin-top:${n?16:0}px">Contact</h2><div class="form">${FIELDS.slice(0,2).map(fld).join('')}</div><h2 style="margin-top:22px">Shipping address</h2><div class="form">${FIELDS.slice(2,8).map(fld).join('')}</div>
+<h2 style="margin-top:22px">Payment</h2><p class="xs mut" style="margin:-6px 0 10px">Prototype: use fictional details only. 4242 4242 4242 4242 works.</p><div class="form">${FIELDS.slice(8).map(fld).join('')}</div>
+<button class="btn block" style="margin-top:22px">Continue to review</button><p class="xs mut" style="text-align:center">You will see everything once more before placing the order.</p></form>${summary(t,`<dl class="kv xs">${S.cart.map(l=>`<dt>${esc(P(l.pid).short)}</dt><dd>${esc(l.color)} · ${l.ful==='ship'?'Ship':'Pickup'} · ×${l.qty}</dd>`).join('')}</dl>`)}</div>`}
+function fld([k,l,c,ty,ph]){const v=esc(S.form[k]);return `<div class="${c}${S.errs[k]?' err':''}"><label for="f_${k}">${l}</label>${ty==='sel'?`<select id="f_${k}" name="${k}">${['AZ','CA','NM','NV','TX','UT'].map(s=>`<option ${S.form[k]===s?'selected':''}>${s}</option>`).join('')}</select>`:`<input id="f_${k}" name="${k}" type="${ty}" value="${v}" ${ph?`placeholder="${ph}"`:''} autocomplete="off" aria-invalid="${!!S.errs[k]}" aria-describedby="e_${k}">`}<span class="e" id="e_${k}">${MSG[k]}</span></div>`}
+function vReview(){const t=totals(),f=S.form;return `<p class="crumbs"><button data-go="checkout">← Back to details</button></p><h1>Review your order</h1><div class="steps"><span class="done">✓ Cart</span><span class="done">✓ Details</span><span class="on">Review</span><span>Done</span></div><div class="grid"><div class="card">
+${S.cart.map((l,i)=>`<div class="sec"><div style="display:flex;gap:14px"><div class="pic" style="width:84px;flex:none">${phone(col(P(l.pid),l.color).c)}</div><div><b>${esc(P(l.pid).name)}</b><dl class="kv" style="margin-top:6px"><dt>Color</dt><dd>${esc(l.color)}</dd><dt>Quantity</dt><dd>${l.qty}</dd><dt>Protection</dt><dd>${l.prot?'2-year plan':'None'}</dd><dt>Price</dt><dd>${money(P(l.pid).price*l.qty)}</dd></dl></div></div><button class="link" data-redit="${i}">Change</button></div>`).join('')}
+<div class="sec"><div><h3>${S.cart.some(l=>l.ful==='ship')?'Shipping to':'Pickup'}</h3><p style="margin:0">${esc(f.first)} ${esc(f.last)}<br>${esc(f.addr)}<br>${esc(f.city)}, ${f.state} ${f.zip}</p><p class="st ok" style="margin:6px 0 0">Free shipping · arrives tomorrow</p></div><button class="link" data-go="checkout">Change</button></div>
+<div class="sec"><div><h3>Contact</h3><p style="margin:0">${esc(f.email)} · ${esc(f.phone)}</p></div><button class="link" data-go="checkout">Change</button></div>
+<div class="sec"><div><h3>Payment</h3><p style="margin:0">Card ending ${f.card.replace(/\D/g,'').slice(-4)} · exp ${esc(f.exp)}</p></div><button class="link" data-go="checkout">Change</button></div></div>
+${summary(t,`<button class="btn block" id="place">Place order · ${money(t.total)}</button><p class="xs mut" style="text-align:center;margin:6px 0 0">Simulated. No payment is taken.</p>`)}</div>`}
+function vDone(){const o=S.order;return `<div class="card" style="max-width:760px;margin:0 auto"><div class="hero-ok"><div class="check" aria-hidden="true">✓</div><div><h1 style="margin:0">Order placed</h1><p class="mut" style="margin:0">Order #${o.no} · confirmation sent to ${esc(o.email)} (simulated)</p></div></div>
+<div class="steps"><span class="done">✓ Cart</span><span class="done">✓ Details</span><span class="done">✓ Review</span><span class="on">Done</span></div>
+<p><b>Status: Confirmed — preparing to ship.</b> Your card would be charged when it ships. Nothing else is needed from you.</p>
+${o.lines.map(l=>`<div class="sec"><div style="display:flex;gap:14px"><div class="pic" style="width:72px;flex:none">${phone(l.c)}</div><div><b>${esc(l.name)}</b><div class="sm">${esc(l.color)} · qty ${l.qty}${l.prot?' · protection':''}</div></div></div><b>${money(l.amt)}</b></div>`).join('')}
+<dl class="kv" style="margin-top:12px"><dt>Arrives</dt><dd>Tomorrow, by 8 pm</dd><dt>Ship to</dt><dd>${esc(o.addr)}</dd><dt>Total charged</dt><dd>${money(o.total)}</dd></dl>
+<p class="sm mut">Changed your mind? You can cancel within 30 minutes from Orders (not part of this prototype).</p><button class="btn" id="again">Start over (reset prototype)</button></div>`}
+function locLayer(){return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="lt"><form class="card" id="lf"><h2 id="lt">Where should we deliver?</h2><p class="sm mut">We use one ZIP everywhere: availability, delivery dates, tax and checkout.</p><div class="f"><label for="lz">ZIP code</label><input id="lz" inputmode="numeric" value="${S.zip}"><span class="e" id="lze">Enter a 5-digit ZIP code.</span></div><div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn">Use this ZIP</button><button type="button" class="btn ghost" data-close>Cancel</button></div></form></div>`}
+function addedLayer(){const l=S.cart[S.cart.length-1],p=P(l.pid),t=totals();return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="at"><div class="card"><div class="hero-ok"><div class="check" aria-hidden="true">✓</div><h2 id="at" style="margin:0">Added to your cart</h2></div><div style="display:flex;gap:14px;align-items:center"><div class="pic" style="width:96px;flex:none">${phone(col(p,l.color).c)}</div><dl class="kv"><dt>Item</dt><dd>${esc(p.short)}</dd><dt>Color</dt><dd>${esc(l.color)}</dd><dt>Delivery</dt><dd>${l.ful==='ship'?'Ship to '+S.zip+', tomorrow':'Pickup today'}</dd><dt>Protection</dt><dd>${l.prot?'Added':'None'}</dd></dl></div><p style="margin:14px 0 0">Cart: ${S.cart.reduce((a,x)=>a+x.qty,0)} item(s) · <b>${money(t.sub+t.pr)}</b> before tax</p><div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-go="cart">Review cart</button><button class="btn ghost" data-close>Keep shopping</button></div></div></div>`}
+function render(){const v={search:vSearch,pdp:vPdp,cart:vCart,checkout:vCheckout,review:vReview,done:vDone}[S.view];$('#app').innerHTML=v();
+ $('#layer').innerHTML=S.layer==='loc'?locLayer():S.layer==='added'?addedLayer():'';
+ $('#loctxt').textContent=S.zip+' · '+(ZIPS[S.zip]?.city||'');$('#ccount').textContent=S.cart.reduce((a,l)=>a+l.qty,0);
+ $('#sid').textContent=$('#showS').checked?sid():'';document.title=sid().split(' · ')[1]+' · Prototype';
+ const fl=$('#layer [data-close]')||$('#layer .btn');if(fl)fl.focus();}
+document.addEventListener('click',e=>{const b=e.target.closest('button,[data-open]');if(!b)return;const d=b.dataset;
+ if(d.open){go('pdp',{pid:d.open,color:P(d.open).colors[0].n,ful:'ship',prot:false});return}
+ if(d.go){if(d.go==='checkout')S.fromReview=false;go(d.go,{editing:false});return}
+ if(d.color){S.color=d.color;render();return}
+ if(d.swap){S.color=d.swap;render();toast(`Switched to ${d.swap}. Delivery and protection kept.`);return}
+ if(d.ful&&S.view==='pdp'){S.ful=d.ful;render();return}
+ if(d.notify!==undefined){toast(`We’ll email you when ${S.color} ships again (simulated).`);return}
+ if(d.loc!==undefined||b.id==='locbtn'){S.layer='loc';render();return}
+ if(d.close!==undefined){S.layer=null;render();return}
+ if(b.id==='add'){S.cart.push({pid:S.pid,color:S.color,ful:S.ful,prot:S.prot,qty:1});S.layer='added';render();$('#sid').textContent=$('#showS').checked?sid():'';return}
+ if(b.id==='cartbtn'){go('cart');return}
+ if(d.q){const[i,dlt]=d.q.split(',').map(Number);S.cart[i].qty=Math.max(1,Math.min(3,S.cart[i].qty+dlt));if(S.cart[i].qty===3&&dlt>0)toast('Limit 3 per customer.');render();return}
+ if(d.edit){const i=+d.edit;S.editing=S.editing===i?false:i;render();return}
+ if(d.rm){const i=+d.rm,l=S.cart.splice(i,1)[0];S.editing=false;render();const t=document.createElement('div');t.className='toast';t.innerHTML=`Removed ${esc(P(l.pid).short)} (${esc(l.color)}). <button class="link" style="color:#fff">Undo</button>`;t.querySelector('button').onclick=()=>{S.cart.splice(i,0,l);t.remove();render()};document.body.append(t);setTimeout(()=>t.remove(),6000);return}
+ if(d.ecolor){const[i,n]=d.ecolor.split('|');const l=S.cart[+i];if(!avail(col(P(l.pid),n),l.ful)){toast(`${n} is sold out for ${l.ful==='ship'?'shipping':'pickup'}. Your current color is kept.`);return}l.color=n;render();toast(`Color changed to ${n}. Price unchanged.`);return}
+ if(d.eful){const[i,f]=d.eful.split('|');const l=S.cart[+i];if(!avail(col(P(l.pid),l.color),f)){toast(`${l.color} isn’t available for ${f==='ship'?'shipping':'pickup'}. Choose another color first.`);return}l.ful=f;render();return}
+ if(d.done!==undefined){S.editing=false;if(S.fromReview){S.fromReview=false;go('review')}else render();return}
+ if(d.redit){S.fromReview=true;go('cart',{editing:+d.redit});S.fromReview=true;render();return}
+ if(b.id==='place'){const t=totals();S.order={no:'VS-'+(4100000+Math.floor(Math.random()*899999)),email:S.form.email,addr:`${S.form.addr}, ${S.form.city}, ${S.form.state} ${S.form.zip}`,total:t.total,lines:S.cart.map(l=>({name:P(l.pid).short,color:l.color,qty:l.qty,prot:l.prot,c:col(P(l.pid),l.color).c,amt:(P(l.pid).price+(l.prot?PROT:0))*l.qty}))};S.cart=[];go('done');return}
+ if(b.id==='again'||b.id==='reset'){S=fresh();$('#q').value='noise cancelling headphones';render();window.scrollTo(0,0);return}
+});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='prot'){S.prot=t.checked;render()}if(t.dataset.eprot){S.cart[+t.dataset.eprot].prot=t.checked;render()}if(t.id==='showS')render();if(t.closest('#cf'))S.form[t.name]=t.value});
+document.addEventListener('input',e=>{const t=e.target;if(!t.closest('#cf'))return;S.form[t.name]=t.value;if(S.errs[t.name]&&!validate(S.form)[t.name]){delete S.errs[t.name];t.closest('.f').classList.remove('err');t.setAttribute('aria-invalid','false');$('#sid').textContent=$('#showS').checked?sid():''}});
+function setZip(z,src){const old=S.zip;if(z===old)return;const before=totals();S.zip=z;S.zipSrc=src;if(!ZIPS[z])ZIPS[z]={city:'',rate:.08};const after=totals();S.taxNote=S.cart.length?`Tax updated for ZIP ${z}: ${money(after.tax)} (was ${money(before.tax)} for ${old}). Total now ${money(after.total)}.`:''}
+document.addEventListener('submit',e=>{e.preventDefault();const f=e.target;
+ if(f.id==='sform'){go('search');return}
+ if(f.id==='lf'){const z=$('#lz').value.trim();if(!/^\d{5}$/.test(z)){$('#lz').parentElement.classList.add('err');$('#lz').focus();return}setZip(z,'you entered');S.layer=null;render();toast(`Delivering to ${z}. Availability and tax updated.`);return}
+ if(f.id==='cf'){S.errs=validate(S.form);if(Object.keys(S.errs).length){render();$('#esum')?.focus();const k=Object.keys(S.errs)[0];$('#f_'+k)?.focus();return}
+  if(S.form.zip!==S.zip)setZip(S.form.zip,'from your shipping address');else S.taxNote='';go('review');}
+});
+render();
+}
+</script>
+</body>
+</html>
